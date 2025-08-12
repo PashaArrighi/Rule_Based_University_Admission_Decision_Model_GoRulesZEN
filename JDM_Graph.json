@@ -1,0 +1,209 @@
+{
+  "contentType": "application/vnd.gorules.decision",
+  "nodes": [
+    {
+      "type": "inputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "834b587b-a55c-4a18-9ea1-aabd2d428702",
+      "name": "request",
+      "position": {
+        "x": -675,
+        "y": 380
+      }
+    },
+    {
+      "type": "functionNode",
+      "content": {
+        "source": "/**\n * @type {import(\"zen\").Handler}\n */\nexport const handler = async (input) => {\n  input.flags = input.flags || {};\n\n  // Validate if student exists\n  if (!input.student) {\n    input.flags.inputValid = false;\n    return input;\n  }\n\n  // Safety cast: force numbers if not null\n  if (input.student.annualIncome != null) {\n    input.student.annualIncome = Number(input.student.annualIncome);\n  }\n  if (input.student.gpa != null) {\n    input.student.gpa = Number(input.student.gpa);\n  }\n\n  // Proper validation: check null, NaN, empty string\n  const valid =\n    typeof input.student.annualIncome === \"number\" &&\n    !isNaN(input.student.annualIncome) &&\n    typeof input.student.gpa === \"number\" &&\n    !isNaN(input.student.gpa) &&\n    typeof input.student.schoolType === \"string\" &&\n    input.student.schoolType.trim() !== \"\" &&\n    typeof input.student.extracurricular === \"string\" &&\n    input.student.extracurricular.trim() !== \"\";\n\n  input.flags.inputValid = valid;\n\n  return input;\n};\n"
+      },
+      "id": "90762592-1757-4037-8d22-3217ea49a47d",
+      "name": "inputValidator",
+      "position": {
+        "x": -430,
+        "y": 380
+      }
+    },
+    {
+      "type": "functionNode",
+      "content": {
+        "source": "/**\n * @type {import(\"zen\").Handler}\n */\nexport const handler = async (input) => {\n  input.flags = input.flags || {};\n\n  const incomeScore = input.flags.incomeScore || 0;\n  const schoolTypeScore = input.flags.schoolTypeScore || 0;\n  const activityScore = input.flags.activityScore || 0;\n\n  const totalScore = incomeScore + schoolTypeScore + activityScore;\n  input.flags.totalScore = totalScore;\n\n  // Admission Decision\n  if (totalScore >= 20) {\n    input.flags.admissionResult = \"Accepted\";\n  } else if (totalScore >= 15) {\n    input.flags.admissionResult = \"Backup\";\n  } else {\n    input.flags.admissionResult = \"Rejected\";\n  }\n\n  return input;\n};\n"
+      },
+      "id": "6756ba63-389b-470a-8cae-ec5fca7a0699",
+      "name": "aggregator",
+      "position": {
+        "x": 840,
+        "y": 375
+      }
+    },
+    {
+      "type": "outputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "79c72c2d-2340-43b3-a972-9bf6b8e66a27",
+      "name": "response",
+      "position": {
+        "x": 1110,
+        "y": 375
+      }
+    },
+    {
+      "type": "switchNode",
+      "content": {
+        "hitPolicy": "first",
+        "statements": [
+          {
+            "id": "bfce928f-6930-4a0c-9a87-004c301c936a",
+            "condition": "flags.gpaEligible == true",
+            "isDefault": false
+          },
+          {
+            "id": "ff492d5c-970f-4f27-abe8-b32b4ed71147",
+            "condition": "",
+            "isDefault": true
+          }
+        ]
+      },
+      "id": "f9d41222-2837-4422-8afb-15ae5a3ca78e",
+      "name": "checkGPAEligibility",
+      "position": {
+        "x": 295,
+        "y": 380
+      }
+    },
+    {
+      "type": "outputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "0df80756-0335-4cd5-912a-b57144144e8b",
+      "name": "Failed GPA < 3.0",
+      "position": {
+        "x": 560,
+        "y": 480
+      }
+    },
+    {
+      "type": "switchNode",
+      "content": {
+        "hitPolicy": "first",
+        "statements": [
+          {
+            "id": "5d43896f-5ca3-4082-95d1-03518b3faf6f",
+            "condition": "flags.inputValid == true",
+            "isDefault": false
+          },
+          {
+            "id": "7bff162e-590c-466f-bc20-853b3227688c",
+            "condition": "",
+            "isDefault": true
+          }
+        ]
+      },
+      "id": "d931e576-b160-42b5-8c71-1ad90a777fcf",
+      "name": "checkInput",
+      "position": {
+        "x": -185,
+        "y": 380
+      }
+    },
+    {
+      "type": "outputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "2622a5cf-474f-4acf-a2b2-3961e4b19d17",
+      "name": "Failed Missing Data",
+      "position": {
+        "x": 55,
+        "y": 480
+      }
+    },
+    {
+      "type": "functionNode",
+      "content": {
+        "source": "/**\n * @type {import(\"zen\").Handler}\n */\nexport const handler = async (input) => {\n  const flags = input.flags || {};\n\n  if (input.student.gpa == null) {\n    return {\n      ...input,\n      flags: {\n        ...flags,\n        gpaEligible: false\n      },\n      error: \"Missing field: GPA\"\n    };\n  }\n\n  if (input.student.gpa < 3.0) {\n    return {\n      ...input,\n      flags: {\n        ...flags,\n        gpaEligible: false\n      },\n      error: \"Rejected due to GPA below 3.0\"\n    };\n  }\n\n  // GPA is good\n  return {\n    ...input,\n    flags: {\n      ...flags,\n      gpaEligible: true\n    }\n  };\n};\n"
+      },
+      "id": "fcb3d5de-d4fc-4e2c-b866-7e9ab0eaf90e",
+      "name": "checkGPA",
+      "position": {
+        "x": 55,
+        "y": 380
+      }
+    },
+    {
+      "type": "functionNode",
+      "content": {
+        "source": "/**\n * @type {import(\"zen\").Handler}\n */\nexport const handler = async (input) => {\n  input.flags = input.flags || {};\n\n  // Annual Income Score\n  if (input.student.annualIncome >= 0 && input.student.annualIncome <= 40000) {\n    input.flags.incomeScore = 10;\n  } else if (input.student.annualIncome > 40000 && input.student.annualIncome <= 80000) {\n    input.flags.incomeScore = 5;\n  } else if (input.student.annualIncome > 80000) {\n    input.flags.incomeScore = 2;\n  } else {\n    input.flags.incomeScore = 0;\n  }\n\n  // School Type Score\n  if (input.student.schoolType === \"Public\") {\n    input.flags.schoolTypeScore = 10;\n  } else if (input.student.schoolType === \"Private\") {\n    input.flags.schoolTypeScore = 5;\n  } else {\n    input.flags.schoolTypeScore = 0;\n  }\n\n  // Extracurricular Score\n  if (input.student.extracurricular === \"Community Service\") {\n    input.flags.activityScore = 10;\n  } else if (input.student.extracurricular === \"Sports\" || input.student.extracurricular === \"Music\") {\n    input.flags.activityScore = 5;\n  } else if (input.student.extracurricular === \"None\") {\n    input.flags.activityScore = 0;\n  } else {\n    input.flags.activityScore = 0;\n  }\n\n  return input;\n};\n"
+      },
+      "id": "0f943e04-00ca-4578-bc47-8eb5b0732ddd",
+      "name": "simpleScoringHandler",
+      "position": {
+        "x": 555,
+        "y": 375
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "b8edf9d7-f792-4543-9778-6a3b1da1e924",
+      "sourceId": "834b587b-a55c-4a18-9ea1-aabd2d428702",
+      "type": "edge",
+      "targetId": "90762592-1757-4037-8d22-3217ea49a47d"
+    },
+    {
+      "id": "78df60f8-3437-4dc9-838f-f9ef8e2cae06",
+      "sourceId": "6756ba63-389b-470a-8cae-ec5fca7a0699",
+      "type": "edge",
+      "targetId": "79c72c2d-2340-43b3-a972-9bf6b8e66a27"
+    },
+    {
+      "id": "100bdf4a-ee97-4a95-b412-9762f2c4d5f3",
+      "sourceId": "f9d41222-2837-4422-8afb-15ae5a3ca78e",
+      "type": "edge",
+      "targetId": "0df80756-0335-4cd5-912a-b57144144e8b",
+      "sourceHandle": "ff492d5c-970f-4f27-abe8-b32b4ed71147"
+    },
+    {
+      "id": "0d2bdca8-c5f3-4253-97ff-ac04ae3461ec",
+      "sourceId": "90762592-1757-4037-8d22-3217ea49a47d",
+      "type": "edge",
+      "targetId": "d931e576-b160-42b5-8c71-1ad90a777fcf"
+    },
+    {
+      "id": "6d810600-1cf3-43a2-9773-1065c384cb2d",
+      "sourceId": "d931e576-b160-42b5-8c71-1ad90a777fcf",
+      "type": "edge",
+      "targetId": "2622a5cf-474f-4acf-a2b2-3961e4b19d17",
+      "sourceHandle": "7bff162e-590c-466f-bc20-853b3227688c"
+    },
+    {
+      "id": "00730da3-5583-4063-b8fa-8d08be769205",
+      "sourceId": "d931e576-b160-42b5-8c71-1ad90a777fcf",
+      "type": "edge",
+      "targetId": "fcb3d5de-d4fc-4e2c-b866-7e9ab0eaf90e",
+      "sourceHandle": "5d43896f-5ca3-4082-95d1-03518b3faf6f"
+    },
+    {
+      "id": "0eff338b-d973-4c2d-8a5d-b7a9f7a5d53f",
+      "sourceId": "fcb3d5de-d4fc-4e2c-b866-7e9ab0eaf90e",
+      "type": "edge",
+      "targetId": "f9d41222-2837-4422-8afb-15ae5a3ca78e"
+    },
+    {
+      "id": "a1b5931e-48c5-40ea-a265-c60ab0fde761",
+      "sourceId": "f9d41222-2837-4422-8afb-15ae5a3ca78e",
+      "type": "edge",
+      "targetId": "0f943e04-00ca-4578-bc47-8eb5b0732ddd",
+      "sourceHandle": "bfce928f-6930-4a0c-9a87-004c301c936a"
+    },
+    {
+      "id": "aa98eb86-4b4d-439b-8e04-a23a04b4929a",
+      "sourceId": "0f943e04-00ca-4578-bc47-8eb5b0732ddd",
+      "type": "edge",
+      "targetId": "6756ba63-389b-470a-8cae-ec5fca7a0699"
+    }
+  ]
+}
