@@ -40,7 +40,7 @@ Example scenarios to verify model accuracy:
 - Showcases **transparent, auditable scoring** that can be adapted for different institutions.
 - Aligns with global best practices from **UNESCO, OECD, and World Bank** on AI in education.
 
-## 📂 Repository Contents
+## Repository Contents
 - `JDM_Graph.json` – Decision model logic file for GoRules.
 
 ---
